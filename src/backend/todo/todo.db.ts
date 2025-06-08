@@ -17,7 +17,11 @@ export const TodoRepository = {
         const todos = fs.existsSync(dbPath)
             ? JSON.parse(fs.readFileSync(dbPath, "utf-8"))
             : [];
-        return todos as Todo[];
+        return (todos as Todo[]).sort(
+            (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+        );
     },
     addTodo: (text: string, userId: string) => {
         const dbPath = getUserDbPath(userId);
