@@ -14,33 +14,34 @@ import { addTodo, completeTodo, removeTodo } from "@/backend/todo/todo.action";
 
 interface TodoListProps {
     todosPromise: Promise<Todo[]>;
+    userId: string;
 }
 
-export function TodoList({ todosPromise }: TodoListProps) {
+export function TodoList({ todosPromise, userId }: TodoListProps) {
     const todos = use(todosPromise);
 
-    const handleAdd = (text: string) => {
-        addTodo(text);
+    const handleAdd = (text: string, userId: string) => {
+        addTodo(text, userId);
     };
 
     const handleRemove = (id: string) => {
-        removeTodo(id);
+        removeTodo(id, userId);
     };
 
     const handleComplete = (id: string) => {
-        completeTodo(id);
+        completeTodo(id, userId);
     };
 
     return (
         <>
-            <TodoInput onSubmit={handleAdd} />
+            <TodoInput onSubmit={handleAdd} userId={userId} />
             <ul className="space-y-3">
                 {todos.map((todo) => (
                     <TodoListItem
                         key={todo.id}
                         todo={todo}
-                        handleComplete={handleComplete}
-                        handleRemove={handleRemove}
+                        handleComplete={() => handleComplete(todo.id)}
+                        handleRemove={() => handleRemove(todo.id)}
                     />
                 ))}
 
@@ -66,8 +67,8 @@ export function TodoList({ todosPromise }: TodoListProps) {
 
 interface TodoListItemProps {
     todo: Todo;
-    handleComplete: (id: string) => void;
-    handleRemove: (id: string) => void;
+    handleComplete: () => void;
+    handleRemove: () => void;
 }
 
 function TodoListItem({
@@ -93,7 +94,7 @@ function TodoListItem({
                         "transition-all duration-300 hover:ring-2 hover:ring-accent",
                         todo.completed ? "opacity-70" : "opacity-100"
                     )}
-                    onClick={() => handleComplete(todo.id)}
+                    onClick={handleComplete}
                     id="complete"
                 />
 
@@ -133,7 +134,7 @@ function TodoListItem({
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemove(todo.id)}
+                    onClick={handleRemove}
                     className="h-8 w-8 text-destructive hover:text-destructive hover:dark:bg-destructive/10"
                     id="delete"
                 >

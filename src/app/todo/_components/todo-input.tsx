@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 
 interface TodoInputProps {
-    onSubmit: (text: string) => void;
+    onSubmit: (text: string, userId: string) => void;
+    userId: string;
 }
 
-export function TodoInput({ onSubmit }: TodoInputProps) {
+export function TodoInput({ onSubmit, userId }: TodoInputProps) {
     const formRef = useRef<HTMLFormElement>(null);
     const isFocused = formRef.current?.isFocused ?? false;
 
@@ -21,7 +22,7 @@ export function TodoInput({ onSubmit }: TodoInputProps) {
         const formData = new FormData(e.target as HTMLFormElement);
         const text = formData.get("text") as string;
         formRef.current?.reset();
-        onSubmit(text);
+        onSubmit(text, userId);
     };
 
     return (
