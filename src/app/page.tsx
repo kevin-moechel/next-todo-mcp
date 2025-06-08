@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
@@ -28,6 +29,7 @@ export default function Home() {
 
                 <div className="flex gap-4 items-center flex-col sm:flex-row">
                     <Button>Click me</Button>
+                    <ThemeToggle />
                 </div>
             </main>
             <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
