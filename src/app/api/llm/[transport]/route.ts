@@ -6,7 +6,6 @@ import {
     createMcpHandler,
     experimental_withMcpAuth,
 } from "@vercel/mcp-adapter";
-import { revalidatePath } from "next/cache";
 import { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { getUserByApiKey, User } from "@/app/auth/users.dal";
 
@@ -21,7 +20,6 @@ const handler = createMcpHandler(
             async ({ text }, { authInfo }) => {
                 const user = (authInfo as MyAuthInfo).user;
                 TodoRepository.addTodo(text, user.id);
-                revalidatePath("/todo");
                 return {
                     content: [{ type: "text", text: `Todo added: ${text}` }],
                 };
@@ -37,7 +35,6 @@ const handler = createMcpHandler(
             async ({ id }, { authInfo }) => {
                 const user = (authInfo as MyAuthInfo).user;
                 TodoRepository.removeTodo(id, user.id);
-                revalidatePath("/todo");
                 return {
                     content: [{ type: "text", text: `Todo removed: ${id}` }],
                 };
