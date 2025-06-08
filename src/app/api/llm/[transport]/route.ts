@@ -2,8 +2,13 @@ import { z } from "zod";
 
 import { TodoRepository } from "@/backend/todo/todo.db";
 
-import { createMcpHandler } from "@vercel/mcp-adapter";
+import {
+    createMcpHandler,
+    experimental_withMcpAuth,
+} from "@vercel/mcp-adapter";
 import { revalidatePath } from "next/cache";
+import { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { getUserByApiKey, User } from "@/app/auth/users.dal";
 
 const handler = createMcpHandler(
     async (server) => {
@@ -13,8 +18,9 @@ const handler = createMcpHandler(
             {
                 text: z.string().min(3),
             },
-            async ({ text }) => {
-                TodoRepository.addTodo(text);
+            async ({ text }, { authInfo }) => {
+                const user = (authInfo as MyAuthInfo).user;
+                TodoRepository.addTodo(text, user.id);
                 revalidatePath("/todo");
                 return {
                     content: [{ type: "text", text: `Todo added: ${text}` }],
@@ -28,8 +34,9 @@ const handler = createMcpHandler(
             {
                 id: z.string().describe("The ID of the todo to remove"),
             },
-            async ({ id }) => {
-                TodoRepository.removeTodo(id);
+            async ({ id }, { authInfo }) => {
+                const user = (authInfo as MyAuthInfo).user;
+                TodoRepository.removeTodo(id, user.id);
                 revalidatePath("/todo");
                 return {
                     content: [{ type: "text", text: `Todo removed: ${id}` }],
@@ -37,12 +44,18 @@ const handler = createMcpHandler(
             }
         );
 
-        server.tool("get_todos", "Gets the list of todos", {}, async () => {
-            const todos = TodoRepository.getTodos();
-            return {
-                content: [{ type: "text", text: JSON.stringify(todos) }],
-            };
-        });
+        server.tool(
+            "get_todos",
+            "Gets the list of todos",
+            {},
+            async (_, { authInfo }) => {
+                const user = (authInfo as MyAuthInfo).user;
+                const todos = TodoRepository.getTodos(user.id);
+                return {
+                    content: [{ type: "text", text: JSON.stringify(todos) }],
+                };
+            }
+        );
     },
     {},
     {
@@ -50,4 +63,31 @@ const handler = createMcpHandler(
     }
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+type MyAuthInfo = AuthInfo & {
+    user: User;
+};
+
+const withMcpAuth = experimental_withMcpAuth(
+    handler,
+    (_, bearer) => {
+        if (!bearer) {
+            throw new Error("No API key provided.");
+        }
+        const user = getUserByApiKey(bearer);
+        if (!user) {
+            throw new Error("Invalid API key");
+        }
+        const authInfo: MyAuthInfo = {
+            token: bearer,
+            clientId: user.id,
+            scopes: [],
+            user,
+        };
+        return authInfo;
+    },
+    {
+        required: true,
+    }
+);
+
+export { withMcpAuth as GET, withMcpAuth as POST, withMcpAuth as DELETE };
