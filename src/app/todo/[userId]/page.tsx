@@ -4,11 +4,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-    params: { userId: string };
+    params: Promise<{ userId: string }>;
 }
 
 export default async function UserTodoPage({ params }: PageProps) {
-    const { userId } = params;
+    const { userId } = await params;
     if (!userId) return notFound();
     const todos = getTodos(userId);
     return (

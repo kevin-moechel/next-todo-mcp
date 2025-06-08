@@ -2,24 +2,26 @@ import { Todo } from "@/backend/todo/todo.type";
 import fs from "fs";
 import path from "path";
 
-const DB_PATH = path.join(process.cwd(), "data", "todos.json");
+const DATA_DIR = path.join(process.cwd(), "data", "todos");
 
 // Ensure data directory exists
-if (!fs.existsSync(path.dirname(DB_PATH))) {
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+
+const getUserDbPath = (userId: string) => path.join(DATA_DIR, `${userId}.json`);
 
 export const TodoRepository = {
     getTodos: (userId: string) => {
-        const todos = fs.existsSync(DB_PATH)
-            ? JSON.parse(fs.readFileSync(DB_PATH, "utf-8"))
+        const dbPath = getUserDbPath(userId);
+        const todos = fs.existsSync(dbPath)
+            ? JSON.parse(fs.readFileSync(dbPath, "utf-8"))
             : [];
-        return (todos as Todo[]).filter((todo) => todo.userId === userId);
+        return todos as Todo[];
     },
     addTodo: (text: string, userId: string) => {
-        const todos = fs.existsSync(DB_PATH)
-            ? JSON.parse(fs.readFileSync(DB_PATH, "utf-8"))
-            : [];
+        const dbPath = getUserDbPath(userId);
+        const todos = TodoRepository.getTodos(userId);
         todos.push({
             id: crypto.randomUUID(),
             text,
@@ -27,30 +29,24 @@ export const TodoRepository = {
             createdAt: new Date(),
             userId,
         });
-        fs.writeFileSync(DB_PATH, JSON.stringify(todos, null, 2));
+        fs.writeFileSync(dbPath, JSON.stringify(todos, null, 2));
     },
     removeTodo: (id: string, userId: string) => {
-        const todos = fs.existsSync(DB_PATH)
-            ? JSON.parse(fs.readFileSync(DB_PATH, "utf-8"))
-            : [];
-        const index = todos.findIndex(
-            (todo: Todo) => todo.id === id && todo.userId === userId
-        );
+        const dbPath = getUserDbPath(userId);
+        const todos = TodoRepository.getTodos(userId);
+        const index = todos.findIndex((todo: Todo) => todo.id === id);
         if (index !== -1) {
             todos.splice(index, 1);
         }
-        fs.writeFileSync(DB_PATH, JSON.stringify(todos, null, 2));
+        fs.writeFileSync(dbPath, JSON.stringify(todos, null, 2));
     },
     completeTodo: (id: string, userId: string) => {
-        const todos = fs.existsSync(DB_PATH)
-            ? JSON.parse(fs.readFileSync(DB_PATH, "utf-8"))
-            : [];
-        const todo = todos.find(
-            (todo: Todo) => todo.id === id && todo.userId === userId
-        );
+        const dbPath = getUserDbPath(userId);
+        const todos = TodoRepository.getTodos(userId);
+        const todo = todos.find((todo: Todo) => todo.id === id);
         if (todo) {
             todo.completed = true;
         }
-        fs.writeFileSync(DB_PATH, JSON.stringify(todos, null, 2));
+        fs.writeFileSync(dbPath, JSON.stringify(todos, null, 2));
     },
 };
